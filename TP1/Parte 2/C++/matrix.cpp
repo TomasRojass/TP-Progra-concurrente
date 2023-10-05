@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <pthread.h>
+#include <thread>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
 
 #define MAX 32
 #define MIN -32
@@ -9,22 +9,14 @@
 #define COLUMNS 5
 #define THREADS 5
 
-typedef struct p
-{
-  int *A;
-  int *B;
-  int *result;
-  int columns;
-}parameters;
-
 int GenerateRandomNumber(int min, int max);
 int** GenerateMatrix(int rows, int columns);
-void PrintMatrix(int **matrix, int rows, int columns, char *name);
+void PrintMatrix(int **matrix, int rows, int columns, std::string name);
 void FillMatrix(int** matrix, int rows, int columns);
 void SumSecuencial(int** A, int** B, int** result, int rows, int columns);
 void SumConcurrent(int** A, int** B, int** result, int rows, int columns, int threads);
 void CompareMatrix(int **A, int **b, int rows, int columns);
-void* SumRow(void *arguments);
+void SumRow(int* A, int* B, int* result, int columns);
 void FreeMatrix(int **matrix, int rows);
 
 int main(int argc, char *argv[])
@@ -82,9 +74,9 @@ int GenerateRandomNumber(int min, int max)
 }
 
 
-void PrintMatrix(int **matrix, int rows, int columns, char *name)
+void PrintMatrix(int **matrix, int rows, int columns, std::string name)
 {
-     printf("\n\nMatrix %s:\n\n", name);
+     std::cout<<"\n\nMatrix "<<name<<":\n\n"<<std::endl;
      for(int i = 0; i < rows; i++)
      {
        for(int j= 0; j < columns; j++)
@@ -104,28 +96,22 @@ void SumSecuencial(int** A, int** B, int** result, int rows, int columns)
 
 void SumConcurrent(int** A, int** B, int** result, int rows, int columns, int threads)
 {
-  pthread_t t_id[threads];
-  parameters params[threads];
+  std::thread v_th[threads];
   for(int i = 0; i < threads; i++)
   {
-    params[i].A = A[i];
-    params[i].B = B[i];
-    params[i].result = result[i];
-    params[i].columns = columns;
-    pthread_create(&t_id[i], NULL, SumRow, &params[i]);
+    v_th[i] = std::thread(SumRow, A[i], B[i], result[i], columns);
   }
   for(int i = 0; i < threads; i++)
   {
-    pthread_join(t_id[i], NULL);
+    v_th[i].join();
   }
 }
 
 
-void* SumRow(void *arguments)
+void SumRow(int* A, int* B, int* result, int columns)
 {
-  parameters *params  = (parameters*)arguments;
-  for(int i = 0; i < params->columns; i++)
-    params->result[i] = params->A[i] + params->B[i];
+  for(int i = 0; i < columns; i++)
+    result[i] = A[i] + B[i];
 }
 
 
@@ -152,10 +138,10 @@ void CompareMatrix(int **A, int **B, int rows, int columns)
       }
   if(iguales)
   {
-    printf("\n\nSON IGUALES");
+    printf("\n\nLas matrices CC y CS son IGUALES");
   }
   else
   {
-    printf("\n\nSON DISTINTOS");
+    printf("\n\nLas matrices CC y CS son DISTINTAS");
   }
 }
